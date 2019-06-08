@@ -119,7 +119,6 @@ func QueryReservationsBetweenDate(fromDate string, toDate string, calendarID str
 // DeleteEventByID ...
 func DeleteEventByID(calendarID string, eventID string) error{
 	err := calendarClient.Events.Delete(calendarID, eventID).Do()
-
 	if err != nil {
 		log.Println("Unable to delete event wit calendarId: " + calendarID + " eventID: " + eventID)
 		return err
