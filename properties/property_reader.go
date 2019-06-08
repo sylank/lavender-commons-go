@@ -65,3 +65,32 @@ func (properties *DynamoProperties) GetTableName(customTableName string) string 
 func GetEnvironmentName() string {
 	return os.Getenv("environment_name")
 }
+
+// CalendarProperties ..
+type CalendarProperties struct {
+	CalendarInfo map[string]CalendarInfo `json:"calendarInfo"`
+}
+
+//CalendarInfo ...
+type CalendarInfo struct {
+	CalendarID string `json:"name"`
+}
+
+// ReadCalendarPropertiesProperties ...
+func ReadCalendarPropertiesProperties(fileName string) (*CalendarProperties, error) {
+	data := utils.ReadBytesFromFile(fileName)
+	var obj CalendarProperties
+	err := json.Unmarshal([]byte(data), &obj)
+	if err != nil {
+		log.Println(fmt.Sprintf("Error while reading file, filename: %s",fileName), err)
+
+		return nil, err
+	}
+
+	return &obj, nil
+}
+
+// GetCalendarID ...
+func (properties *CalendarProperties) GetCalendarID(calendarName string) string {
+	return properties.CalendarInfo[calendarName].CalendarID
+}

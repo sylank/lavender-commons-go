@@ -2,6 +2,7 @@ package dynamo
 
 import (
 	"log"
+	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -22,16 +23,10 @@ type UserModel struct {
 	Inserted int
 }
 
-// ReservationModel ...
-type ReservationModel struct {
-	ReservationID string
-	Email         string
-}
-
 // TODO: refactor the Deletion model and the DeletionInsertionModel struct
 type DeletionModel struct {
-	UserId        string `json:"userId"`
-	ReservationId string `json:"reservationId"`
+	UserID        string `json:"userId"`
+	ReservationID string `json:"reservationId"`
 	Type          string `json:"type"`
 	Message       string `json:"message"`
 }
@@ -95,8 +90,9 @@ func queryItems(email string, table string, proj expression.ProjectionBuilder) (
 	return customQuery("Email", email, table, proj)
 }
 
-func queryItemsByUserId(userId string, table string, proj expression.ProjectionBuilder) (*dynamodb.ScanOutput, error) {
-	return customQuery("UserId", userId, table, proj)
+// queryItemsByUserID ...
+func queryItemsByUserID(userID string, table string, proj expression.ProjectionBuilder) (*dynamodb.ScanOutput, error) {
+	return customQuery("UserId", userID, table, proj)
 }
 
 func customQuery(clumnName string, value string, table string, proj expression.ProjectionBuilder) (*dynamodb.ScanOutput, error) {
@@ -134,7 +130,7 @@ func ClearUserData(userID string) error {
 	userTableName := properties.GetTableName("userData")
 
 	proj := expression.NamesList(expression.Name("FullName"), expression.Name("Email"), expression.Name("Phone"), expression.Name("UserId"))
-	result, err := queryItemsByUserId(userID, userTableName, proj)
+	result, err := queryItemsByUserID(userID, userTableName, proj)
 
 	userEmail := ""
 
@@ -189,60 +185,6 @@ func ClearUserData(userID string) error {
 	return nil
 }
 
-// ClearReservationData ...
-func ClearReservationData(email string) error {
-	reservationTableName := properties.GetTableName("reservations")
-
-	proj := expression.NamesList(expression.Name("ReservationId"), expression.Name("Email"))
-	result, err := queryItems(email, reservationTableName, proj)
-
-	for _, i := range result.Items {
-		item := ReservationModel{}
-
-		err = dynamodbattribute.UnmarshalMap(i, &item)
-
-		if err != nil {
-			log.Println("Got error unmarshalling:")
-			log.Println(err.Error())
-
-			return err
-		}
-
-		if item.Email == email {
-			log.Println("Record found!")
-			reservationID := item.ReservationID
-
-			log.Println("Reservation id for mail: " + reservationID)
-
-			input := &dynamodb.UpdateItemInput{
-				ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-					":r": {
-						S: aws.String("#CLEARED#"),
-					},
-				},
-				TableName: aws.String(reservationTableName),
-				Key: map[string]*dynamodb.AttributeValue{
-					"ReservationId": {
-						S: aws.String(reservationID),
-					},
-				},
-				ReturnValues:     aws.String("UPDATED_NEW"),
-				UpdateExpression: aws.String("set Email = :r"),
-			}
-
-			_, updateError := client.UpdateItem(input)
-			if updateError != nil {
-				log.Println(updateError.Error())
-				return updateError
-			}
-		}
-	}
-
-	log.Println("Record updated")
-
-	return nil
-}
-
 // InsertDeletionTypeTable ...
 func InsertDeletionTypeTable(deletionModel *DeletionModel, tableName string) error {
 	log.Print("Insert deletion data: ")
@@ -255,7 +197,7 @@ func InsertDeletionTypeTable(deletionModel *DeletionModel, tableName string) err
 		Message       string
 	}
 
-	av, err := dynamodbattribute.MarshalMap(&DeletionInsertionModel{UserID: deletionModel.UserId, ReservationID: deletionModel.ReservationId, Type: deletionModel.Type, Message: deletionModel.Message})
+	av, err := dynamodbattribute.MarshalMap(&DeletionInsertionModel{UserID: deletionModel.UserID, ReservationID: deletionModel.ReservationID, Type: deletionModel.Type, Message: deletionModel.Message})
 	if err != nil {
 		log.Println("Got error marshalling new reservationModel item:")
 		log.Println(err.Error())
@@ -275,6 +217,137 @@ func InsertDeletionTypeTable(deletionModel *DeletionModel, tableName string) err
 
 		return err
 	}
+
+	return nil
+}
+
+// ReservationModel ...
+type ReservationModel struct {
+	ReservationID string
+	FromDate      string
+	ToDate        string
+	UserID        string
+	Deleted       bool
+}
+
+// ReservationDynamoModel ...
+type ReservationDynamoModel struct {
+	ReservationID string
+	FromDate      string
+	ToDate        string
+	UserID        string
+	Deleted       string
+}
+
+// QueryReservationTypeTable ...
+func QueryReservationTypeTable(reservationID string, table string) ([]ReservationModel, error) {
+	log.Println("Query data with reservationId: " + reservationID)
+	var retData []ReservationModel
+	proj := expression.NamesList(expression.Name("ReservationId"), expression.Name("FromDate"), expression.Name("ToDate"), expression.Name("UserId"), expression.Name("Deleted"))
+	result, err := customQuery("ReservationId", reservationID, table, proj)
+	if err != nil {
+		log.Println("Query API call failed:", err)
+		return nil, err
+	}
+
+	log.Println("Result array:")
+	log.Println(result.Items)
+	for _, i := range result.Items {
+		log.Println("Marshalling:")
+		log.Println(i)
+		item := ReservationDynamoModel{}
+		err = dynamodbattribute.UnmarshalMap(i, &item)
+
+		if err != nil {
+			log.Println("Got error unmarshalling:", err)
+			return nil, err
+		}
+
+		deleted, err := strconv.ParseBool(item.Deleted)
+		if err != nil {
+			return nil, err
+		}
+
+		retData = append(retData, ReservationModel{ReservationID: item.ReservationID, FromDate: item.FromDate, ToDate: item.ToDate, UserID: item.UserID, Deleted: deleted})
+	}
+
+	return retData, err
+}
+
+// InsertReservationTypeTable ...
+func InsertReservationTypeTable(reservationModel *ReservationModel, table string) {
+	av, err := dynamodbattribute.MarshalMap(reservationModel)
+	if err != nil {
+		log.Println("Got error marshalling new reservationModel item:")
+		log.Println(err.Error())
+	}
+
+	input := &dynamodb.PutItemInput{
+		Item:      av,
+		TableName: aws.String(table),
+	}
+
+	_, err = client.PutItem(input)
+	if err != nil {
+		log.Println("Got error calling PutItem:")
+		log.Println(err.Error())
+	}
+
+	log.Println("Item inserted with reservationId: " + reservationModel.ReservationID)
+}
+
+// DeleteReservationReservationType ...
+func DeleteReservationReservationType(reservationID string, table string) error {
+	input := &dynamodb.DeleteItemInput{
+		Key: map[string]*dynamodb.AttributeValue{
+			"ReservationId": {
+				S: aws.String(reservationID),
+			},
+		},
+		TableName: aws.String(table),
+	}
+
+	_, err := client.DeleteItem(input)
+	if err != nil {
+		log.Println("Got error calling DeleteItem", err)
+
+		return err
+	}
+
+	log.Println("Item deleted with reservationId: " + reservationID)
+
+	return nil
+}
+
+// UpdateDeletedReservationStatus ...
+func UpdateDeletedReservationStatus(reservationID string, userID string, table string) error {
+	input := &dynamodb.UpdateItemInput{
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":r": {
+				BOOL: aws.Bool(true),
+			},
+		},
+		TableName: aws.String(table),
+		Key: map[string]*dynamodb.AttributeValue{
+			"ReservationId": {
+				S: aws.String(reservationID),
+			},
+			"UserId": {
+				S: aws.String(userID),
+			},
+		},
+		ReturnValues:     aws.String("UPDATED_NEW"),
+		UpdateExpression: aws.String("set Deleted = :r"),
+	}
+
+	_, updateError := client.UpdateItem(input)
+	if updateError != nil {
+		log.Println(updateError.Error())
+
+		return updateError
+	}
+
+	log.Println("Record updated")
 
 	return nil
 }
