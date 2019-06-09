@@ -15,6 +15,12 @@ type Secrets struct {
 	EncriptionKey         string `json:"encriptionKey"`
 }
 
+// EmailSecrets ...
+type EmailSecrets struct {
+	FromAddress string `json:"from_address"`
+	Password    string `json:"password"`
+}
+
 // DynamoProperties ...
 type DynamoProperties struct {
 	Region    string               `json:"region"`
@@ -68,6 +74,20 @@ func ReadDynamoProperties(fileName string) (*DynamoProperties, error) {
 func ReadCalendarProperties(fileName string) (*CalendarProperties, error) {
 	data := utils.ReadBytesFromFile(fileName)
 	var obj CalendarProperties
+	err := json.Unmarshal([]byte(data), &obj)
+	if err != nil {
+		log.Println(fmt.Sprintf("Error while reading file, filename: %s", fileName), err)
+
+		return nil, err
+	}
+
+	return &obj, nil
+}
+
+// ReadEmailSecrets ...
+func ReadEmailSecrets(fileName string) (*EmailSecrets, error) {
+	data := utils.ReadBytesFromFile(fileName)
+	var obj EmailSecrets
 	err := json.Unmarshal([]byte(data), &obj)
 	if err != nil {
 		log.Println(fmt.Sprintf("Error while reading file, filename: %s", fileName), err)
