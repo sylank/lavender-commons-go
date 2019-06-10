@@ -75,7 +75,7 @@ func IsUserStored(email string) (*UserModel, error) {
 	log.Println(userTableName)
 
 	proj := expression.NamesList(expression.Name("FullName"), expression.Name("Email"), expression.Name("Phone"), expression.Name("UserId"))
-	result, err := customQuery("Email", email, userTableName, proj)
+	result, err := CustomQuery("Email", email, userTableName, proj)
 	if err != nil {
 		log.Println("Query API call failed:")
 		log.Println((err.Error()))
@@ -105,7 +105,8 @@ func IsUserStored(email string) (*UserModel, error) {
 	return nil, nil
 }
 
-func customQuery(clumnName string, value string, table string, proj expression.ProjectionBuilder) (*dynamodb.ScanOutput, error) {
+// CustomQuery ...
+func CustomQuery(clumnName string, value string, table string, proj expression.ProjectionBuilder) (*dynamodb.ScanOutput, error) {
 	filt := expression.Name(clumnName).Equal(expression.Value(value))
 
 	expr, err := expression.NewBuilder().WithFilter(filt).WithProjection(proj).Build()
@@ -135,12 +136,45 @@ func customQuery(clumnName string, value string, table string, proj expression.P
 	return result, err
 }
 
+// QueryUserByUserID ...
+func QueryUserByUserID(userID string) (*UserModel, error) {
+	usersTableName := properties.GetTableName("userData")
+
+	proj := expression.NamesList(expression.Name("FullName"), expression.Name("Email"), expression.Name("Phone"), expression.Name("UserId"))
+	result, err := CustomQuery("UserId", userID, usersTableName, proj)
+
+	if err != nil {
+		log.Println("Query API call failed:")
+		log.Println((err.Error()))
+
+		return nil, err
+	}
+
+	for _, i := range result.Items {
+		item := UserModel{}
+
+		err = dynamodbattribute.UnmarshalMap(i, &item)
+
+		if err != nil {
+			log.Println("Got error unmarshalling:")
+			log.Println(err.Error())
+
+			return nil, err
+		}
+
+		return &item, nil
+	}
+
+	log.Println("Record not found!")
+	return nil, nil
+}
+
 // ClearUserData ...
 func ClearUserData(userID string) error {
 	userTableName := properties.GetTableName("userData")
 
 	proj := expression.NamesList(expression.Name("FullName"), expression.Name("Email"), expression.Name("Phone"), expression.Name("UserId"))
-	result, err := customQuery("UserId", userID, userTableName, proj)
+	result, err := CustomQuery("UserId", userID, userTableName, proj)
 	if err != nil {
 		return err
 	}
@@ -232,7 +266,7 @@ func QueryReservationTypeTable(reservationID string, table string) ([]Reservatio
 	log.Println("Query data with reservationId: " + reservationID)
 	var retData []ReservationModel
 	proj := expression.NamesList(expression.Name("ReservationId"), expression.Name("FromDate"), expression.Name("ToDate"), expression.Name("UserId"), expression.Name("Deleted"))
-	result, err := customQuery("ReservationId", reservationID, table, proj)
+	result, err := CustomQuery("ReservationId", reservationID, table, proj)
 	if err != nil {
 		log.Println("Query API call failed:", err)
 		return nil, err
