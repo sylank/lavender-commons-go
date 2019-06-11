@@ -293,6 +293,7 @@ func QueryReservationTypeTable(reservationID string, table string) ([]Reservatio
 		costValue, err := strconv.Atoi(item.CostValue)
 		depositCostValue, err := strconv.Atoi(item.DepositCostValue)
 		if err != nil {
+			log.Println("Failed to convert values", err)
 			return nil, err
 		}
 
