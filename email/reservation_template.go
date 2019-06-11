@@ -1,6 +1,7 @@
 package formatter
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/sylank/lavender-commons-go/utils"
@@ -8,14 +9,16 @@ import (
 
 // EmailTemplate ...
 type EmailTemplate struct {
-	rawText       string
-	email         string
-	name          string
-	deletionURL   string
-	reservationID string
-	fromDate      string
-	toDate        string
-	message       string
+	rawText          string
+	email            string
+	name             string
+	deletionURL      string
+	reservationID    string
+	fromDate         string
+	toDate           string
+	message          string
+	costValue        int
+	depositCostValue int
 }
 
 // InitEmail ...
@@ -58,6 +61,16 @@ func (template *EmailTemplate) SetMessage(message string) {
 	template.message = message
 }
 
+// SetCostValue ...
+func (template *EmailTemplate) SetCostValue(costValue int) {
+	template.costValue = costValue
+}
+
+// SetDepositCostValue ...
+func (template *EmailTemplate) SetDepositCostValue(depositCostValue int) {
+	template.depositCostValue = depositCostValue
+}
+
 // GenerateEmailText ...
 func (template *EmailTemplate) GenerateEmailText() string {
 	var tmpText = template.rawText
@@ -68,7 +81,9 @@ func (template *EmailTemplate) GenerateEmailText() string {
 		"<reservationId>", template.reservationID,
 		"<fromDate>", template.fromDate,
 		"<toDate>", template.toDate,
-		"<message>", template.message)
+		"<message>", template.message,
+		"<costValue>", strconv.Itoa(template.costValue),
+		"<depositCost>", strconv.Itoa(template.depositCostValue))
 
 	return r.Replace(tmpText)
 }

@@ -33,20 +33,24 @@ type DeletionInsertModel struct {
 
 // ReservationModel ...
 type ReservationModel struct {
-	ReservationID string
-	FromDate      string
-	ToDate        string
-	UserID        string
-	Deleted       bool
+	ReservationID    string
+	FromDate         string
+	ToDate           string
+	UserID           string
+	Deleted          bool
+	CostValue        int
+	DepositCostValue int
 }
 
 // ReservationDynamoModel ...
 type ReservationDynamoModel struct {
-	ReservationID string
-	FromDate      string
-	ToDate        string
-	UserID        string
-	Deleted       string
+	ReservationID    string
+	FromDate         string
+	ToDate           string
+	UserID           string
+	Deleted          string
+	CostValue        string
+	DepositCostValue string
 }
 
 var client *dynamodb.DynamoDB
@@ -286,11 +290,21 @@ func QueryReservationTypeTable(reservationID string, table string) ([]Reservatio
 		}
 
 		deleted, err := strconv.ParseBool(item.Deleted)
+		costValue, err := strconv.Atoi(item.CostValue)
+		depositCostValue, err := strconv.Atoi(item.DepositCostValue)
 		if err != nil {
 			return nil, err
 		}
 
-		retData = append(retData, ReservationModel{ReservationID: item.ReservationID, FromDate: item.FromDate, ToDate: item.ToDate, UserID: item.UserID, Deleted: deleted})
+		retData = append(retData, ReservationModel{
+			ReservationID:    item.ReservationID,
+			FromDate:         item.FromDate,
+			ToDate:           item.ToDate,
+			UserID:           item.UserID,
+			Deleted:          deleted,
+			CostValue:        costValue,
+			DepositCostValue: depositCostValue,
+		})
 	}
 
 	return retData, err
