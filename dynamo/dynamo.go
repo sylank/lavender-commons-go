@@ -133,7 +133,7 @@ func CustomQuery(clumnName string, value string, table string, proj expression.P
 	// Make the DynamoDB Query API call
 	result, err := client.Scan(params)
 	if err != nil {
-		log.Println("Query API call failed:")
+		log.Println("Custom query API call failed:")
 		log.Println((err.Error()))
 	}
 
@@ -272,7 +272,7 @@ func QueryReservationTypeTable(reservationID string, table string) ([]Reservatio
 	proj := expression.NamesList(expression.Name("ReservationId"), expression.Name("FromDate"), expression.Name("ToDate"), expression.Name("UserId"), expression.Name("Deleted"), expression.Name("DepositCostValue"), expression.Name("CostValue"))
 	result, err := CustomQuery("ReservationId", reservationID, table, proj)
 	if err != nil {
-		log.Println("Query API call failed:", err)
+		log.Println("QueryReservationTypeTable query API call failed:", err)
 		return nil, err
 	}
 
@@ -308,6 +308,8 @@ func QueryReservationTypeTable(reservationID string, table string) ([]Reservatio
 		})
 	}
 
+	log.Println("QueryReservationTypeTable returns with")
+	log.Println(retData)
 	return retData, err
 }
 
