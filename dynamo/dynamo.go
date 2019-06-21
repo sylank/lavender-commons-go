@@ -149,7 +149,7 @@ func QueryUserByUserID(userID string) (*UserModel, error) {
 
 	if err != nil {
 		log.Println("Query API call failed:")
-		log.Println((err.Error()))
+		log.Println(err.Error())
 
 		return nil, err
 	}
@@ -363,7 +363,7 @@ func UpdateDeletedReservationStatus(reservationID string, userID string, table s
 	input := &dynamodb.UpdateItemInput{
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":r": {
-				BOOL: aws.Bool(true),
+				S: aws.String(strconv.FormatBool(true)),
 			},
 		},
 		TableName: aws.String(table),
