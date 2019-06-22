@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
+	expression "github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"github.com/pkg/errors"
 
 	props "github.com/sylank/lavender-commons-go/properties"
@@ -109,11 +109,44 @@ func IsUserStored(email string) (*UserModel, error) {
 	return nil, nil
 }
 
+// FetchTable ...
+func FetchTable(table string, proj expression.ProjectionBuilder) (*dynamodb.ScanOutput, error) {
+	expr, err := expression.NewBuilder().WithProjection(proj).Build()
+	if err != nil {
+		log.Println("Got error building expression:")
+		log.Println(err.Error())
+
+		return nil, err
+	}
+
+	// Build the query input parameters
+	params := &dynamodb.ScanInput{
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+		ProjectionExpression:      expr.Projection(),
+		TableName:                 aws.String(table),
+	}
+
+	// Make the DynamoDB Query API call
+	result, err := client.Scan(params)
+	if err != nil {
+		log.Println("Custom query API call failed:")
+		log.Println((err.Error()))
+	}
+
+	return result, err
+}
+
 // CustomQuery ...
 func CustomQuery(clumnName string, value string, table string, proj expression.ProjectionBuilder) (*dynamodb.ScanOutput, error) {
 	filt := expression.Name(clumnName).Equal(expression.Value(value))
 
-	expr, err := expression.NewBuilder().WithFilter(filt).WithProjection(proj).Build()
+	return query(filt, table, proj)
+}
+
+func query(filterBuilder expression.ConditionBuilder, table string, proj expression.ProjectionBuilder) (*dynamodb.ScanOutput, error) {
+	expr, err := expression.NewBuilder().WithFilter(filterBuilder).WithProjection(proj).Build()
 	if err != nil {
 		log.Println("Got error building expression:")
 		log.Println(err.Error())
