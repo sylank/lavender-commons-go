@@ -123,7 +123,6 @@ func FetchTable(table string, proj expression.ProjectionBuilder) (*dynamodb.Scan
 	params := &dynamodb.ScanInput{
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
-		FilterExpression:          new(string),
 		ProjectionExpression:      expr.Projection(),
 		TableName:                 aws.String(table),
 	}
