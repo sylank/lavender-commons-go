@@ -403,9 +403,6 @@ func UpdateDeletedReservationStatus(reservationID string, userID string, table s
 			"ReservationId": {
 				S: aws.String(reservationID),
 			},
-			"UserId": {
-				S: aws.String(userID),
-			},
 		},
 		ReturnValues:     aws.String("UPDATED_NEW"),
 		UpdateExpression: aws.String("set Deleted = :r"),
