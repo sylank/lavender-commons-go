@@ -40,6 +40,7 @@ type ReservationModel struct {
 	Deleted          bool
 	CostValue        int
 	DepositCostValue int
+	ApartmentCode    string
 }
 
 // ReservationDynamoModel ...
@@ -51,6 +52,7 @@ type ReservationDynamoModel struct {
 	Deleted          string
 	CostValue        string
 	DepositCostValue string
+	ApartmentCode    string
 }
 
 var client *dynamodb.DynamoDB
@@ -337,6 +339,7 @@ func QueryReservationTypeTable(reservationID string, table string) ([]Reservatio
 			Deleted:          deleted,
 			CostValue:        costValue,
 			DepositCostValue: depositCostValue,
+			ApartmentCode:    item.ApartmentCode,
 		})
 	}
 
