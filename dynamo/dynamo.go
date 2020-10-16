@@ -33,14 +33,14 @@ type DeletionInsertModel struct {
 
 // ReservationModel ...
 type ReservationModel struct {
-	ReservationID    string
-	FromDate         string
-	ToDate           string
-	UserID           string
-	Deleted          bool
-	CostValue        int
-	DepositCostValue int
-	ApartmentCode    string
+	ReservationID    string `json:"ReservationId"`
+	FromDate         string `json:"FromDate"`
+	ToDate           string `json:"ToDate"`
+	UserID           string `json:"UserId"`
+	Deleted          bool   `json:"Deleted"`
+	CostValue        int    `json:"CostValue"`
+	DepositCostValue int    `json:"DepositCostValue"`
+	ApartmentCode    string `json:"ApartmentCode"`
 }
 
 // ReservationDynamoModel ...
