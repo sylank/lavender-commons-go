@@ -303,7 +303,15 @@ func InsertDeletionTypeTable(deletionModel *DeletionInsertModel, tableName strin
 func QueryReservationTypeTable(reservationID string, table string) ([]ReservationModel, error) {
 	log.Println("Query data with reservationId: " + reservationID)
 	var retData []ReservationModel
-	proj := expression.NamesList(expression.Name("ReservationId"), expression.Name("FromDate"), expression.Name("ToDate"), expression.Name("UserId"), expression.Name("Deleted"), expression.Name("DepositCostValue"), expression.Name("CostValue"))
+	proj := expression.NamesList(
+		expression.Name("ReservationId"),
+		expression.Name("FromDate"),
+		expression.Name("ToDate"),
+		expression.Name("UserId"),
+		expression.Name("Deleted"),
+		expression.Name("DepositCostValue"),
+		expression.Name("CostValue"),
+		expression.Name("ApartmentCode"))
 	result, err := CustomQuery("ReservationId", reservationID, table, proj)
 	if err != nil {
 		log.Println("QueryReservationTypeTable query API call failed:", err)
